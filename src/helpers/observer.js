@@ -58,6 +58,7 @@ export function observe(draggedEl, dropZones, intervalMs = INTERVAL_MS, multiScr
         for (const dz of dropZonesFromDeepToShallow) {
             if (scrolled) resetIndexesCache();
             const indexObj = findWouldBeIndex(draggedEl, dz);
+            console.log(indexObj);
             if (indexObj === null) {
                 // it is not inside
                 continue;
