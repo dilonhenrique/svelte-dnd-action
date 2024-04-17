@@ -4,14 +4,14 @@
     "version": "0.9.43",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/isaacHagoel/svelte-dnd-action.git"
+        "url": "git+https://github.com/dilonhenrique/svelte-dnd-action.git"
     },
     "author": "Isaac Hagoel",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/isaacHagoel/svelte-dnd-action/issues"
+        "url": "https://github.com/dilonhenrique/svelte-dnd-action/issues"
     },
-    "homepage": "https://github.com/isaacHagoel/svelte-dnd-action#readme",
+    "homepage": "https://github.com/dilonhenrique/svelte-dnd-action#readme",
     "module": "dist/index.mjs",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
