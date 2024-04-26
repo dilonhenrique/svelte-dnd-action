@@ -416,14 +416,14 @@ export function dndzone(node, options) {
         /** @type {ShadowRoot | HTMLDocument | Element } */
         const rootNode = originDropZone.closest("dialog") || originDropZone.getRootNode();
         const originDropZoneRoot = rootNode.body || rootNode;
-        const {items: originalItems, type, centreDraggedOnCursor} = config;
+        const {items: originalItems, type, centreDraggedOnCursor, handle} = config;
         const items = [...originalItems];
         draggedElData = items[currentIdx];
         draggedElType = type;
         shadowElData = createShadowElData(draggedElData);
 
         // creating the draggable element
-        draggedEl = createDraggedElementFrom(originalDragTarget, centreDraggedOnCursor && currentMousePosition);
+        draggedEl = createDraggedElementFrom(originalDragTarget, centreDraggedOnCursor && currentMousePosition, handle);
         originalDragTarget.setAttribute(ORIGINAL_DRAGGED_ITEM_MARKER_ATTRIBUTE, true);
 
         // We will keep the original dom node in the dom because touch events keep firing on it, we want to re-add it after the framework removes it

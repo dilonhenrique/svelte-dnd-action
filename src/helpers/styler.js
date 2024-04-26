@@ -19,7 +19,7 @@ function trs(property) {
  * @param {Point} [positionCenterOnXY]
  * @return {Node} - the cloned, styled element
  */
-export function createDraggedElementFrom(originalElement, positionCenterOnXY) {
+export function createDraggedElementFrom(originalElement, positionCenterOnXY, handleSelector) {
     const rect = originalElement.getBoundingClientRect();
     const draggedEl = svelteNodeClone(originalElement);
     copyStylesFromTo(originalElement, draggedEl);
@@ -49,8 +49,9 @@ export function createDraggedElementFrom(originalElement, positionCenterOnXY) {
     draggedEl.style.zIndex = "9999";
     draggedEl.style.cursor = "grabbing";
 
-    // this pass the events to below elements
-    draggedEl.style.pointerEvents = "none";
+    // change cursor style for handle
+    const handleEl = draggedEl.querySelector(handleSelector);
+    if (handleEl) handleEl.style.cursor = "grabbing";
 
     return draggedEl;
 }
