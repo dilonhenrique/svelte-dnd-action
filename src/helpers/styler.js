@@ -53,6 +53,9 @@ export function createDraggedElementFrom(originalElement, positionCenterOnXY, ha
     const handleEl = draggedEl.querySelector(handleSelector);
     if (handleEl) handleEl.style.cursor = "grabbing";
 
+    // pass the events for the elements below to check [isElementOnTopOnThisPoint()]
+    draggedEl.style.pointerEvents = "none";
+
     return draggedEl;
 }
 
