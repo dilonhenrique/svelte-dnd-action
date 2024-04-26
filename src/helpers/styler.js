@@ -49,6 +49,9 @@ export function createDraggedElementFrom(originalElement, positionCenterOnXY) {
     draggedEl.style.zIndex = "9999";
     draggedEl.style.cursor = "grabbing";
 
+    // this pass the events to below elements
+    draggedEl.style.pointerEvents = "none";
+
     return draggedEl;
 }
 

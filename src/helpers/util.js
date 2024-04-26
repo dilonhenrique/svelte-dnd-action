@@ -21,6 +21,11 @@ function _getDepth(node, countSoFar = 0) {
     if (!node.parentElement) {
         return countSoFar - 1;
     }
+
+    // if (window.getComputedStyle(node.parentElement)?.getPropertyValue("position") === 'fixed') {
+    //     return _getDepth(node.parentElement, countSoFar + 50); // if the element is above all
+    // }
+
     return _getDepth(node.parentElement, countSoFar + 1);
 }
 

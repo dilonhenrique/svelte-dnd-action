@@ -37,7 +37,7 @@ function cacheShadowRect(dz) {
  */
 /**
  * Find the index for the dragged element in the list it is dragged over
- * @param {HTMLElement} floatingAboveEl
+ * @param {HTMLElement | Point} floatingAboveEl
  * @param {HTMLElement} collectionBelowEl
  * @returns {Index|null} -  if the element is over the container the Index object otherwise null
  */

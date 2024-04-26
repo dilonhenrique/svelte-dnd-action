@@ -119,11 +119,14 @@ export function isPointInsideRect(point, rect) {
 
 /**
  * find the absolute coordinates of the center of a dom element
- * @param el {HTMLElement}
+ * @param {HTMLElement | Point} el
  * @returns {{x: number, y: number}}
  */
 export function findCenterOfElement(el) {
-    return findCenter(getAbsoluteRect(el));
+    if (el instanceof HTMLElement) {
+        return findCenter(getAbsoluteRect(el));
+    }
+    return el;
 }
 
 /**
@@ -155,4 +158,15 @@ export function calcDistanceBetweenCenters(elA, elB) {
 export function isElementOffDocument(el) {
     const rect = getAbsoluteRect(el);
     return rect.right < 0 || rect.left > document.documentElement.scrollWidth || rect.bottom < 0 || rect.top > document.documentElement.scrollHeight;
+}
+
+/**
+ * Checks if node is on top on that specific point
+ * @param {HTMLElement} node
+ * @param {Point} point
+ * @return {boolean} - true if node (or child of this node) is on top
+ */
+export function isElementOnTopOnThisPoint(node, point) {
+    const spotEl = document.elementFromPoint(point.x, point.y);
+    return spotEl === node || node.contains(spotEl);
 }

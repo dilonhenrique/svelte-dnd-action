@@ -62,7 +62,7 @@ let scheduledForRemovalAfterDrop = [];
 // a map from type to a set of drop-zones
 const typeToDropZones = new Map();
 // important - this is needed because otherwise the config that would be used for everyone is the config of the element that created the event listeners
-const dzToConfig = new Map();
+export const dzToConfig = new Map();
 // this is needed in order to be able to cleanup old listeners and avoid stale closures issues (as the listener is defined within each zone)
 const elToMouseDownListener = new WeakMap();
 
@@ -75,6 +75,11 @@ function registerDropZone(dropZoneEl, type) {
     if (!typeToDropZones.get(type).has(dropZoneEl)) {
         typeToDropZones.get(type).add(dropZoneEl);
         incrementActiveDropZoneCount();
+        if (isWorkingOnPreviousDrag) {
+            // this is from https://github.com/isaacHagoel/svelte-dnd-action/compare/master...m4nnke:svelte-dnd-action:un_and_rewatch_at_new_zone_on_drag
+            unWatchDraggedElement();
+            watchDraggedElement();
+        }
     }
 }
 function unregisterDropZone(dropZoneEl, type) {
@@ -101,7 +106,7 @@ function watchDraggedElement() {
     const setIntervalMs = Math.max(...Array.from(dropZones.keys()).map(dz => dzToConfig.get(dz).dropAnimationDurationMs));
     const observationIntervalMs = setIntervalMs === 0 ? DISABLED_OBSERVATION_INTERVAL_MS : Math.max(setIntervalMs, MIN_OBSERVATION_INTERVAL_MS); // if setIntervalMs is 0 it goes to 20, otherwise it is max between it and min observation.
     const multiScroller = createMultiScroller(dropZones, () => currentMousePosition);
-    observe(draggedEl, dropZones, observationIntervalMs * 1.07, multiScroller);
+    observe(draggedEl, dropZones, observationIntervalMs * 1.07, multiScroller, () => currentMousePosition);
 }
 function unWatchDraggedElement() {
     printDebug(() => "unwatching dragged element");
@@ -333,7 +338,9 @@ export function dndzone(node, options) {
         dropTargetStyle: DEFAULT_DROP_TARGET_STYLE,
         dropTargetClasses: [],
         transformDraggedElement: () => {},
-        centreDraggedOnCursor: false
+        centreDraggedOnCursor: false,
+        calculatePositionByCursor: false,
+        handle: undefined
     };
     printDebug(() => [`dndzone good to go options: ${toString(options)}, config: ${toString(config)}`, {node}]);
     let elToIdx = new Map();
@@ -374,7 +381,7 @@ export function dndzone(node, options) {
             handleDragStart();
         }
     }
-    function handleMouseDown(e) {
+    function handleMouseDown(e, draggableEl) {
         // on safari clicking on a select element doesn't fire mouseup at the end of the click and in general this makes more sense
         if (e.target !== e.currentTarget && (e.target.value !== undefined || e.target.isContentEditable)) {
             printDebug(() => "won't initiate drag on a nested input element");
@@ -394,7 +401,7 @@ export function dndzone(node, options) {
         const c = e.touches ? e.touches[0] : e;
         dragStartMousePosition = {x: c.clientX, y: c.clientY};
         currentMousePosition = {...dragStartMousePosition};
-        originalDragTarget = e.currentTarget;
+        originalDragTarget = draggableEl ?? e.currentTarget;
         addMaybeListeners();
     }
 
@@ -465,7 +472,9 @@ export function dndzone(node, options) {
         dropTargetStyle = DEFAULT_DROP_TARGET_STYLE,
         dropTargetClasses = [],
         transformDraggedElement = () => {},
-        centreDraggedOnCursor = false
+        centreDraggedOnCursor = false,
+        calculatePositionByCursor = false,
+        handle = undefined
     }) {
         config.dropAnimationDurationMs = dropAnimationDurationMs;
         if (config.type && newType !== config.type) {
@@ -477,6 +486,8 @@ export function dndzone(node, options) {
         config.morphDisabled = morphDisabled;
         config.transformDraggedElement = transformDraggedElement;
         config.centreDraggedOnCursor = centreDraggedOnCursor;
+        config.calculatePositionByCursor = calculatePositionByCursor;
+        config.handle = handle;
 
         // realtime update for dropTargetStyle
         if (
@@ -504,7 +515,7 @@ export function dndzone(node, options) {
         function getConfigProp(dz, propName) {
             return dzToConfig.get(dz) ? dzToConfig.get(dz)[propName] : config[propName];
         }
-        if (initialized && isWorkingOnPreviousDrag && config.dropFromOthersDisabled !== dropFromOthersDisabled) {
+        if (initialized && isWorkingOnPreviousDrag /*&& config.dropFromOthersDisabled !== dropFromOthersDisabled*/) {
             if (dropFromOthersDisabled) {
                 styleInactiveDropZones(
                     [node],
@@ -535,11 +546,12 @@ export function dndzone(node, options) {
                 decorateShadowEl(draggableEl);
                 continue;
             }
-            draggableEl.removeEventListener("mousedown", elToMouseDownListener.get(draggableEl));
-            draggableEl.removeEventListener("touchstart", elToMouseDownListener.get(draggableEl));
+            const handleEl = draggableEl.querySelector(config.handle) ?? draggableEl;
+            handleEl.removeEventListener("mousedown", elToMouseDownListener.get(draggableEl));
+            handleEl.removeEventListener("touchstart", elToMouseDownListener.get(draggableEl));
             if (!dragDisabled) {
-                draggableEl.addEventListener("mousedown", handleMouseDown);
-                draggableEl.addEventListener("touchstart", handleMouseDown);
+                handleEl.addEventListener("mousedown", ev => handleMouseDown(ev, draggableEl));
+                handleEl.addEventListener("touchstart", ev => handleMouseDown(ev, draggableEl));
                 elToMouseDownListener.set(draggableEl, handleMouseDown);
             }
             // updating the idx

@@ -1,5 +1,5 @@
 import {findWouldBeIndex, resetIndexesCache} from "./listUtil";
-import {findCenterOfElement, isElementOffDocument} from "./intersection";
+import {findCenterOfElement, isElementOffDocument, isElementOnTopOnThisPoint} from "./intersection";
 import {
     dispatchDraggedElementEnteredContainer,
     dispatchDraggedElementLeftContainerForAnother,
@@ -9,6 +9,7 @@ import {
 } from "./dispatcher";
 import {getDepth} from "./util";
 import {printDebug} from "../constants";
+import {dzToConfig} from "../pointerAction";
 
 const INTERVAL_MS = 200;
 const TOLERANCE_PX = 10;
@@ -20,8 +21,9 @@ let next;
  * @param {HTMLElement} draggedEl
  * @param {number} [intervalMs = INTERVAL_MS]
  * @param {MultiScroller} multiScroller
+ * @param {function():Point | null} getPointerPosition
  */
-export function observe(draggedEl, dropZones, intervalMs = INTERVAL_MS, multiScroller) {
+export function observe(draggedEl, dropZones, intervalMs = INTERVAL_MS, multiScroller, getPointerPosition = () => null) {
     // initialization
     let lastDropZoneFound;
     let lastIndexFound;
@@ -57,8 +59,14 @@ export function observe(draggedEl, dropZones, intervalMs = INTERVAL_MS, multiScr
         let isDraggedInADropZone = false;
         for (const dz of dropZonesFromDeepToShallow) {
             if (scrolled) resetIndexesCache();
-            const indexObj = findWouldBeIndex(draggedEl, dz);
-            console.log(indexObj);
+
+            if (!isElementOnTopOnThisPoint(dz, getPointerPosition())) {
+                // this DropZone is below some other element on that point
+                continue;
+            }
+
+            const mousePositionOrDraggedEl = dzToConfig.get(dz).calculatePositionByCursor ? getPointerPosition() : draggedEl;
+            const indexObj = findWouldBeIndex(mousePositionOrDraggedEl, dz);
             if (indexObj === null) {
                 // it is not inside
                 continue;
