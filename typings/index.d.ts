@@ -39,6 +39,7 @@ export interface Options<T extends Item = Item> {
     centreDraggedOnCursor?: boolean;
     calculatePositionByCursor?: boolean;
     handle?: string;
+    passDragEvents?: boolean;
 }
 
 export interface DndZoneAttributes<T> {

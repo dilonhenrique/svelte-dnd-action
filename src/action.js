@@ -22,6 +22,7 @@ import {toString} from "./helpers/util";
  * @property {string[]} [dropTargetClasses]
  * @property {function} [transformDraggedElement]
  * @property {string} [handle] - handler selector
+ * @property {boolean} [passDragEvents]
  * @param {HTMLElement} node - the element to enhance
  * @param {Options} options
  * @return {{update: function, destroy: function}}
@@ -77,6 +78,7 @@ function validateOptions(options) {
         centreDraggedOnCursor,
         calculatePositionByCursor,
         handle,
+        passDragEvents,
         ...rest
     } = options;
     /*eslint-enable*/

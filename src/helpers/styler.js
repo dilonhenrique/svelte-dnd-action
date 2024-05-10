@@ -15,11 +15,15 @@ function trs(property) {
 }
 /**
  * clones the given element and applies proper styles and transitions to the dragged element
+ * @typedef {Object} Options
+ * @property {string | undefined} handleSelector
+ * @property {boolean | undefined} passDragEvents
  * @param {HTMLElement} originalElement
  * @param {Point} [positionCenterOnXY]
+ * @param {Options} [draggedElOptions]
  * @return {Node} - the cloned, styled element
  */
-export function createDraggedElementFrom(originalElement, positionCenterOnXY, handleSelector) {
+export function createDraggedElementFrom(originalElement, positionCenterOnXY, draggedElOptions) {
     const rect = originalElement.getBoundingClientRect();
     const draggedEl = svelteNodeClone(originalElement);
     copyStylesFromTo(originalElement, draggedEl);
@@ -50,11 +54,13 @@ export function createDraggedElementFrom(originalElement, positionCenterOnXY, ha
     draggedEl.style.cursor = "grabbing";
 
     // change cursor style for handle
-    const handleEl = draggedEl.querySelector(handleSelector);
+    const handleEl = draggedEl.querySelector(draggedElOptions.handleSelector);
     if (handleEl) handleEl.style.cursor = "grabbing";
 
-    // pass the events for the elements below to check [isElementOnTopOnThisPoint()]
-    draggedEl.style.pointerEvents = "none";
+    if (draggedElOptions.passDragEvents) {
+        // pass the events for the elements below to check [isElementOnTopOnThisPoint()]
+        draggedEl.style.pointerEvents = "none";
+    }
 
     return draggedEl;
 }

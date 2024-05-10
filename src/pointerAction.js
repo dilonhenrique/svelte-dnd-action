@@ -62,7 +62,7 @@ let scheduledForRemovalAfterDrop = [];
 // a map from type to a set of drop-zones
 const typeToDropZones = new Map();
 // important - this is needed because otherwise the config that would be used for everyone is the config of the element that created the event listeners
-export const dzToConfig = new Map();
+const dzToConfig = new Map();
 // this is needed in order to be able to cleanup old listeners and avoid stale closures issues (as the listener is defined within each zone)
 const elToMouseDownListener = new WeakMap();
 
@@ -102,11 +102,16 @@ function watchDraggedElement() {
     }
     window.addEventListener(DRAGGED_LEFT_DOCUMENT_EVENT_NAME, handleDrop);
 
+    const getPointerPosition = () => currentMousePosition;
+
     // it is important that we don't have an interval that is faster than the flip duration because it can cause elements to jump bach and forth
     const setIntervalMs = Math.max(...Array.from(dropZones.keys()).map(dz => dzToConfig.get(dz).dropAnimationDurationMs));
     const observationIntervalMs = setIntervalMs === 0 ? DISABLED_OBSERVATION_INTERVAL_MS : Math.max(setIntervalMs, MIN_OBSERVATION_INTERVAL_MS); // if setIntervalMs is 0 it goes to 20, otherwise it is max between it and min observation.
-    const multiScroller = createMultiScroller(dropZones, () => currentMousePosition);
-    observe(draggedEl, dropZones, observationIntervalMs * 1.07, multiScroller, () => currentMousePosition);
+    const multiScroller = createMultiScroller(dropZones, getPointerPosition);
+
+    const {passDragEvents, calculatePositionByCursor} = dzToConfig.get(originDropZone);
+
+    observe(draggedEl, dropZones, observationIntervalMs * 1.07, {multiScroller, getPointerPosition, passDragEvents, calculatePositionByCursor});
 }
 function unWatchDraggedElement() {
     printDebug(() => "unwatching dragged element");
@@ -340,7 +345,8 @@ export function dndzone(node, options) {
         transformDraggedElement: () => {},
         centreDraggedOnCursor: false,
         calculatePositionByCursor: false,
-        handle: undefined
+        handle: undefined,
+        passDragEvents: false
     };
     printDebug(() => [`dndzone good to go options: ${toString(options)}, config: ${toString(config)}`, {node}]);
     let elToIdx = new Map();
@@ -416,14 +422,17 @@ export function dndzone(node, options) {
         /** @type {ShadowRoot | HTMLDocument | Element } */
         const rootNode = originDropZone.closest("dialog") || originDropZone.getRootNode();
         const originDropZoneRoot = rootNode.body || rootNode;
-        const {items: originalItems, type, centreDraggedOnCursor, handle} = config;
+        const {items: originalItems, type, centreDraggedOnCursor, handle, passDragEvents} = config;
         const items = [...originalItems];
         draggedElData = items[currentIdx];
         draggedElType = type;
         shadowElData = createShadowElData(draggedElData);
 
         // creating the draggable element
-        draggedEl = createDraggedElementFrom(originalDragTarget, centreDraggedOnCursor && currentMousePosition, handle);
+        draggedEl = createDraggedElementFrom(originalDragTarget, centreDraggedOnCursor && currentMousePosition, {
+            handleSelector: handle,
+            passDragEvents
+        });
         originalDragTarget.setAttribute(ORIGINAL_DRAGGED_ITEM_MARKER_ATTRIBUTE, true);
 
         // We will keep the original dom node in the dom because touch events keep firing on it, we want to re-add it after the framework removes it
@@ -474,7 +483,8 @@ export function dndzone(node, options) {
         transformDraggedElement = () => {},
         centreDraggedOnCursor = false,
         calculatePositionByCursor = false,
-        handle = undefined
+        handle = undefined,
+        passDragEvents = false
     }) {
         config.dropAnimationDurationMs = dropAnimationDurationMs;
         if (config.type && newType !== config.type) {
@@ -488,6 +498,7 @@ export function dndzone(node, options) {
         config.centreDraggedOnCursor = centreDraggedOnCursor;
         config.calculatePositionByCursor = calculatePositionByCursor;
         config.handle = handle;
+        config.passDragEvents = passDragEvents;
 
         // realtime update for dropTargetStyle
         if (

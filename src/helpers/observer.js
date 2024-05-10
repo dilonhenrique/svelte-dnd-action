@@ -9,7 +9,6 @@ import {
 } from "./dispatcher";
 import {getDepth} from "./util";
 import {printDebug} from "../constants";
-import {dzToConfig} from "../pointerAction";
 
 const INTERVAL_MS = 200;
 const TOLERANCE_PX = 10;
@@ -17,13 +16,20 @@ let next;
 
 /**
  * Tracks the dragged elements and performs the side effects when it is dragged over a drop zone (basically dispatching custom-events scrolling)
+ * @typedef {Object} ObserveOptions
+ * @property {MultiScroller} multiScroller
+ * @property {boolean | undefined} passDragEvents
+ * @property {(function():Point | null) | undefined} getPointerPosition
+ * @property {boolean | undefined} calculatePositionByCursor
  * @param {Set<HTMLElement>} dropZones
  * @param {HTMLElement} draggedEl
  * @param {number} [intervalMs = INTERVAL_MS]
- * @param {MultiScroller} multiScroller
- * @param {function():Point | null} getPointerPosition
+ * @param {ObserveOptions} options
  */
-export function observe(draggedEl, dropZones, intervalMs = INTERVAL_MS, multiScroller, getPointerPosition = () => null) {
+export function observe(draggedEl, dropZones, intervalMs = INTERVAL_MS, options) {
+    const defaultOptions = {getPointerPosition: () => null, passDragEvents: false, calculatePositionByCursor: false};
+    const {getPointerPosition, multiScroller, passDragEvents} = {...defaultOptions, ...options};
+
     // initialization
     let lastDropZoneFound;
     let lastIndexFound;
@@ -60,12 +66,12 @@ export function observe(draggedEl, dropZones, intervalMs = INTERVAL_MS, multiScr
         for (const dz of dropZonesFromDeepToShallow) {
             if (scrolled) resetIndexesCache();
 
-            if (!isElementOnTopOnThisPoint(dz, getPointerPosition())) {
+            if (passDragEvents && !isElementOnTopOnThisPoint(dz, getPointerPosition())) {
                 // this DropZone is below some other element on that point
                 continue;
             }
 
-            const mousePositionOrDraggedEl = dzToConfig.get(dz).calculatePositionByCursor ? getPointerPosition() : draggedEl;
+            const mousePositionOrDraggedEl = options.calculatePositionByCursor ? getPointerPosition() : draggedEl;
             const indexObj = findWouldBeIndex(mousePositionOrDraggedEl, dz);
             if (indexObj === null) {
                 // it is not inside
